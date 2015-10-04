@@ -1,10 +1,12 @@
 #include "serial.h"
 #include <stdlib.h>
+#include <stdio.h>
 
 serial_t* Create_Serial()
 {
     serial_t *serializer = malloc(sizeof(serial_t));
     serializer->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    serializer->queues = NULL;
     pthread_mutex_init(serializer->m, NULL);
     return serializer;
 }
@@ -17,6 +19,25 @@ void Serial_Enter(serial_t* serial)
 
 void Serial_Exit(serial_t* serial)
 {
+    serial_node_t *queue = serial->queues;
+    while(queue != NULL)
+    {
+        queue_node_t *node = queue->queue->head;
+        while(node != NULL)
+        {
+            if (node->func())
+            {
+                pthread_cond_signal(node->c);
+                break;
+            }
+            else
+            {
+                node = node->next;
+            }
+        }
+        queue = queue->next;
+    }
+
     pthread_mutex_unlock(serial->m);
 }
 
@@ -25,13 +46,32 @@ queue_t* Create_Queue(serial_t* serial)
     // maybe call serial enter??
     queue_t *queue = malloc(sizeof(queue_t));
     queue->head = NULL;
+
+    serial_node_t *temp = serial->queues;
+
+    if (temp == NULL)
+    {
+        serial->queues = malloc(sizeof(serial_node_t));
+        temp = serial->queues;
+    }
+    else
+    {
+        while (temp->next != NULL)
+        {
+            temp = temp->next;
+            temp = malloc(sizeof(serial_node_t));
+        }
+    }
+    temp->next = NULL;
+    temp->queue = queue;
+
     return queue;
 }
 
 crowd_t* Create_Crowd(serial_t* serial)
 {
     crowd_t *crowd = malloc(sizeof(crowd_t));
-    crowd->head = NULL;
+    crowd->count = 0;
     return crowd;
 }
 
@@ -48,7 +88,7 @@ int Queue_Empty(serial_t* serial, queue_t* queue)
 int Crowd_Empty(serial_t* serial, crowd_t* crowd)
 {
     // check if crowd is empty
-    if (crowd->head == NULL)
+    if (crowd->count == 0)
     {
         return true;
     }
@@ -93,18 +133,13 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     {
         if (node->func())
         {
+            pthread_cond_signal(node->c);
             break;
         }
         else
         {
             node = node->next;
         }
-    }
-
-    if (node != NULL)
-    {
-
-        pthread_cond_signal(node->c);
     }
     
     pthread_cond_wait(temp->c, serial->m);
@@ -118,26 +153,9 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
     // give up serializer (serial exit)
     // call the function
     // serial_enter
-    
-    crowd_node_t *temp = crowd->head;
-    
-    if (temp == NULL) 
-    {
-        temp = malloc(sizeof(crowd_node_t));
-        temp = crowd->head;
-    }
-    else
-    {
-        while(temp->next != NULL)
-        {
-            temp = temp->next;
-        }
-        temp->next = malloc(sizeof(crowd_node_t));
-        temp = temp->next;
-    }
-    temp->p = pthread_self();
-    temp->next = NULL; 
+    crowd->count += 1;
     Serial_Exit(serial);
     func();
+    crowd->count -= 1;
     Serial_Enter(serial);
 }

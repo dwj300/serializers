@@ -6,10 +6,7 @@
 
 typedef int (cond_t)();
 
-typedef struct serial 
-{
-    pthread_mutex_t *m;
-} serial_t;
+
 
 typedef struct queue_node
 {
@@ -23,20 +20,24 @@ typedef struct queue
     queue_node_t *head;
 } queue_t;
 
-typedef struct crowd_node
-{
-    pthread_t *p;
-    struct crowd_node *next;
-} crowd_node_t;
-
 typedef struct crowd 
 {
-    crowd_node_t *head;
+    int count;
 } crowd_t;
 
+typedef struct serial_node
+{
+    queue_t *queue;
+    struct serial_node *next;
+} serial_node_t;
+
+typedef struct serial 
+{
+    serial_node_t *queues;
+    pthread_mutex_t *m;
+} serial_t;
+
 typedef int bool;
-
-
 
 serial_t* Create_Serial();
 void Serial_Enter(serial_t*);
