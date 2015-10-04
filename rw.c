@@ -32,7 +32,7 @@ int main(int argc, char *argv[])
          exit(-1);
       }
 	}
-	for (i = 0; i < NUM_WRITERS; i++)
+	for (i = NUM_READERS; i < NUM_WRITERS+NUM_READERS; i++)
 	{
       rc = pthread_create(&writer[i], NULL, write_func, (void *)i);
       if (rc){

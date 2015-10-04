@@ -13,7 +13,10 @@ serial_t* Create_Serial()
 
 void Serial_Enter(serial_t* serial)
 {
+    fprintf(stderr, "part 2\n");
     pthread_mutex_lock(serial->m);
+    fprintf(stderr, "part 3\n");
+
     // have lock
 }
 
@@ -27,6 +30,7 @@ void Serial_Exit(serial_t* serial)
         {
             if (node->func())
             {
+                fprintf(stderr, "found a valid thing\n");
                 pthread_cond_signal(node->c);
                 break;
             }
@@ -143,6 +147,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     }
     
     pthread_cond_wait(temp->c, serial->m);
+    fprintf(stderr, "coming back to life\n");
     Serial_Enter(serial);
 }
 
