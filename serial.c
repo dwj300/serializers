@@ -65,7 +65,6 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     
     if (temp == NULL) 
     {
-        
         if (func() == true)
         {
             return;
@@ -84,32 +83,62 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     }
     temp->func = func;
     temp->next = NULL;
-    temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
+    
     pthread_cond_init(temp->c, NULL);
     
     queue_node_t *node = queue->head;
+    
     while(node != NULL)
     {
         if (node->func())
         {
-            printf("hmm");
+            break;
+        }
+        else
+        {
+            node = node->next;
         }
     }
 
-    // wait()
+    if (node != NULL)
+    {
+
+        pthread_cond_signal(node->c);
+    }
+    
+    pthread_cond_wait(node->c, serial->m);
     Serial_Enter(serial);
-    //pthread_cond_wait()
-    return;
 }
 
 void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
 {
+    printf("here1");
     // already have serializer
     // join the crowd
     // give up serializer (serial exit)
     // call the function
     // serial_enter
-    return;
-}
 
+    crowd_node_t *temp = crowd->head;
+    
+    if (temp == NULL) 
+    {
+        temp = malloc(sizeof(crowd_node_t));
+        crowd->head = temp;
+    }
+    else
+    {
+        while(temp->next != NULL)
+        {
+            temp = temp->next;
+        }
+        temp->next = malloc(sizeof(crowd_node_t));
+        temp = temp->next;
+    }
+    temp->p = pthread_self();
+    temp->next = NULL; 
+    Serial_Exit(serial);
+    func();
+    Serial_Enter(serial);
+}
