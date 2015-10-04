@@ -107,25 +107,24 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
         pthread_cond_signal(node->c);
     }
     
-    pthread_cond_wait(node->c, serial->m);
+    pthread_cond_wait(temp->c, serial->m);
     Serial_Enter(serial);
 }
 
 void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
 {
-    printf("here1");
     // already have serializer
     // join the crowd
     // give up serializer (serial exit)
     // call the function
     // serial_enter
-
+    
     crowd_node_t *temp = crowd->head;
     
     if (temp == NULL) 
     {
         temp = malloc(sizeof(crowd_node_t));
-        crowd->head = temp;
+        temp = crowd->head;
     }
     else
     {

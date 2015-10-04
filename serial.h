@@ -14,7 +14,6 @@ typedef struct serial
 typedef struct queue_node
 {
     pthread_cond_t *c;
-    pthread_mutex_t *m;
     cond_t *func;
     struct queue_node *next;
 } queue_node_t;
@@ -26,7 +25,7 @@ typedef struct queue
 
 typedef struct crowd_node
 {
-    pthread_t p;
+    pthread_t *p;
     struct crowd_node *next;
 } crowd_node_t;
 
