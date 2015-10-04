@@ -13,25 +13,28 @@ serial_t* Create_Serial()
 
 void Serial_Enter(serial_t* serial)
 {
-    fprintf(stderr, "part 2\n");
+    fprintf(stderr, "locking mutex:%d\n", pthread_self());
     pthread_mutex_lock(serial->m);
-    fprintf(stderr, "part 3\n");
+    fprintf(stderr, "got lock! %d\n", pthread_self());
 
     // have lock
 }
 
 void Serial_Exit(serial_t* serial)
 {
-    serial_node_t *queue = serial->queues;
-    while(queue != NULL)
+    int stop = 0;
+    serial_node_t *serial_node = serial->queues;
+    while(serial_node != NULL && stop == 0)
     {
-        queue_node_t *node = queue->queue->head;
+        queue_node_t *node = serial_node->queue->head;
         while(node != NULL)
         {
             if (node->func())
             {
                 fprintf(stderr, "found a valid thing\n");
-                pthread_cond_signal(node->c);
+                int res = pthread_cond_signal(node->c);
+                fprintf(stderr, "res+signal2: %d\n", res);
+                stop = 1;
                 break;
             }
             else
@@ -39,9 +42,10 @@ void Serial_Exit(serial_t* serial)
                 node = node->next;
             }
         }
-        queue = queue->next;
+        serial_node = serial_node->next;
     }
 
+    fprintf(stderr, "unlocking mutex:%d\n", pthread_self());
     pthread_mutex_unlock(serial->m);
 }
 
@@ -128,16 +132,19 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     temp->func = func;
     temp->next = NULL;
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
+    temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
     
     pthread_cond_init(temp->c, NULL);
-    
+    pthread_mutex_init(temp->m, NULL);
+
     queue_node_t *node = queue->head;
     
     while(node != NULL)
     {
         if (node->func())
         {
-            pthread_cond_signal(node->c);
+            int res = pthread_cond_signal(node->c);
+            fprintf(stderr, "res+signal: %d\n", res);
             break;
         }
         else
@@ -145,9 +152,12 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
             node = node->next;
         }
     }
-    
+    fprintf(stderr, "waiting on condition var:%d\n", pthread_self());
+
+    pthread_mutex_lock(temp->m);
     pthread_cond_wait(temp->c, serial->m);
-    fprintf(stderr, "coming back to life\n");
+
+    fprintf(stderr, "coming back to life %d\n", pthread_self());
     Serial_Enter(serial);
 }
 

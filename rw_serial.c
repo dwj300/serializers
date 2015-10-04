@@ -54,7 +54,7 @@ void *read_func(void *id)
 	long tid;
 	tid = (long)id;
 	Serial_Enter(serializer);
-	printf("Reader thread #%ld starts!\n", tid);
+	printf("Reader thread #%ld starts! (%d)\n", tid, pthread_self());
 	Serial_Enqueue(serializer, waiting_q, &read_queue_cond);
 	Serial_Join_Crowd(serializer, readers_crowd,(void *) (&read_data));
 	Serial_Exit(serializer);
@@ -67,7 +67,7 @@ void *write_func(void *id)
 	long tid;
 	tid = (long)id;
 	Serial_Enter(serializer);
-	printf("Writer thread #%ld starts!\n", tid);
+	printf("Writer thread #%ld starts! (%d)\n", tid, pthread_self());
 	Serial_Enqueue(serializer, waiting_q, &write_queue_cond);
 	Serial_Join_Crowd(serializer, writers_crowd, &write_data);
 	Serial_Exit(serializer);

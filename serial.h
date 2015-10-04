@@ -6,10 +6,9 @@
 
 typedef int (cond_t)();
 
-
-
 typedef struct queue_node
 {
+    pthread_mutex_t *m;
     pthread_cond_t *c;
     cond_t *func;
     struct queue_node *next;
