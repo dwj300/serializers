@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS= -Wall
-CFLAGS2= -lpthread -o
+CFLAGS2= -pthread -o
 
 all: rw dp ds
 
