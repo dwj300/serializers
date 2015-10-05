@@ -27,6 +27,7 @@ void Serial_Exit(serial_t* serial)
     while(serial_node != NULL && stop == 0)
     {
         queue_node_t *node = serial_node->queue->head;
+        queue_node_t *prev = NULL;
         while(node != NULL)
         {
             if (node->func())
@@ -35,10 +36,15 @@ void Serial_Exit(serial_t* serial)
                 int res = pthread_cond_signal(node->c);
                 fprintf(stderr, "res+signal2: %d\n", res);
                 stop = 1;
+                if (prev != NULL)
+                {
+                    prev->next = node->next;
+                }
                 break;
             }
             else
             {
+                prev = node;
                 node = node->next;
             }
         }
@@ -110,8 +116,8 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     // signal that node
     // give up serializer lock
     queue_node_t *temp = queue->head;
-    
-    if (temp == NULL) 
+
+    if (temp == NULL)
     {
         if (func() == true)
         {
@@ -133,22 +139,28 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     temp->next = NULL;
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
     temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
-    
+
     pthread_cond_init(temp->c, NULL);
     pthread_mutex_init(temp->m, NULL);
 
     queue_node_t *node = queue->head;
-    
+    queue_node_t *prev = NULL;
+
     while(node != NULL)
     {
         if (node->func())
         {
             int res = pthread_cond_signal(node->c);
             fprintf(stderr, "res+signal: %d\n", res);
+            if (prev != NULL)
+            {
+                 prev->next = node->next;
+            }
             break;
         }
         else
         {
+            prev = node;
             node = node->next;
         }
     }
