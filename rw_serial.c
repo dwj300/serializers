@@ -54,11 +54,17 @@ void *read_func(void *id)
 	long tid;
 	tid = (long)id;
 	Serial_Enter(serializer);
-	printf("Reader thread #%ld starts! (%d)\n", tid, pthread_self());
+	char str[128];
+	sprintf(str, "Reader thread #%ld starts!", tid);
+	print(str);
+	//print("Reader thread #%ld starts! (%d)\n", tid, pthread_self());
 	Serial_Enqueue(serializer, waiting_q, &read_queue_cond);
 	Serial_Join_Crowd(serializer, readers_crowd,(void *) (&read_data));
 	Serial_Exit(serializer);
-	printf("Reader thread #%ld ends!\n", tid);
+	char s[128];
+	sprintf(s, "Reader thread #%ld ends!", tid);
+	print(s);
+	//printf("Reader thread #%ld ends!\n", tid);
 	pthread_exit(NULL);
 }
 
@@ -67,10 +73,16 @@ void *write_func(void *id)
 	long tid;
 	tid = (long)id;
 	Serial_Enter(serializer);
-	printf("Writer thread #%ld starts! (%d)\n", tid, pthread_self());
+	char str[128];
+	sprintf(str, "Writer thread #%ld starts!", tid);
+	print(str);
+	//printf("Writer thread #%ld starts! (%d)\n", tid, pthread_self());
 	Serial_Enqueue(serializer, waiting_q, &write_queue_cond);
 	Serial_Join_Crowd(serializer, writers_crowd, &write_data);
 	Serial_Exit(serializer);
-	printf("Writer thread #%ld ends!\n", tid);
+	//printf("Writer thread #%ld ends!\n", tid);
+	char s[128];
+	sprintf(s, "Writer thread #%ld ends!", tid);
+	print(s);
 	pthread_exit(NULL);
 }
