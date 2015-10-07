@@ -148,7 +148,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
 
     queue_node_t *node = queue->head;
     queue_node_t *prev = NULL;
-
+    /*
     while(node != NULL)
     {
         if (node->func())
@@ -173,7 +173,8 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
 
     //pthread_mutex_lock(temp->m);
     pthread_cond_wait(temp->c, serial->m);
-
+    */
+    Serial_Exit(serial);
     print("coming back to life");
     Serial_Enter(serial);
 }
