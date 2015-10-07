@@ -13,9 +13,9 @@ serial_t* Create_Serial()
 
 void Serial_Enter(serial_t* serial)
 {
-    fprintf(stderr, "locking mutex:%d\n", pthread_self());
+    print("locking mutex");
     pthread_mutex_lock(serial->m);
-    fprintf(stderr, "got lock! %d\n", pthread_self());
+    print("got lock!");
 
     // have lock
 }
@@ -32,9 +32,11 @@ void Serial_Exit(serial_t* serial)
         {
             if (node->func())
             {
-                fprintf(stderr, "found a valid thing\n");
+                print("found a valid thing");
                 int res = pthread_cond_signal(node->c);
-                fprintf(stderr, "res+signal2: %d\n", res);
+                char str[50];
+                sprintf(str, "res+signal2: %d");
+                print(str);
                 stop = 1;
                 if (prev != NULL)
                 {
@@ -51,7 +53,7 @@ void Serial_Exit(serial_t* serial)
         serial_node = serial_node->next;
     }
 
-    fprintf(stderr, "unlocking mutex:%d\n", pthread_self());
+    print("unlocking mutex");
     pthread_mutex_unlock(serial->m);
 }
 
@@ -152,7 +154,9 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
         if (node->func())
         {
             int res = pthread_cond_signal(node->c);
-            fprintf(stderr, "res+signal: %d\n", res);
+            char str[50];
+            sprintf(str, "res+signal2: %d");
+            print(str);
             if (prev != NULL)
             {
                  prev->next = node->next;
@@ -165,12 +169,12 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
             node = node->next;
         }
     }
-    fprintf(stderr, "waiting on condition var:%d\n", pthread_self());
+    print("waiting on condition var");
 
     //pthread_mutex_lock(temp->m);
     pthread_cond_wait(temp->c, serial->m);
 
-    fprintf(stderr, "coming back to life %d\n", pthread_self());
+    print("coming back to life");
     Serial_Enter(serial);
 }
 
@@ -186,4 +190,9 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
     func();
     crowd->count -= 1;
     Serial_Enter(serial);
+}
+
+void print(char *string)
+{
+    fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
 }

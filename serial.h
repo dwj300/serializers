@@ -47,3 +47,5 @@ int Queue_Empty(serial_t* serial, queue_t* queue);
 int Crowd_Empty(serial_t* serial, crowd_t* crowd);
 void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t *func);
 void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func);
+void print(char *string);
+

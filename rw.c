@@ -9,8 +9,8 @@
 
 #include "rw_serial.h"
 
-#define NUM_READERS 5
-#define NUM_WRITERS 5
+#define NUM_READERS 1
+#define NUM_WRITERS 1
 
 int main(int argc, char *argv[])
 {
