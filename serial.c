@@ -111,6 +111,7 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
 
 void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
 {
+    //fprintf(stderr, "%d\n", serial->m->__data__.__owner);
     // Add to back of queue
     // Find first node where condition is true
     // signal that node
@@ -138,10 +139,10 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     temp->func = func;
     temp->next = NULL;
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
-    temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    //temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
     pthread_cond_init(temp->c, NULL);
-    pthread_mutex_init(temp->m, NULL);
+    //pthread_mutex_init(temp->m, NULL);
 
     queue_node_t *node = queue->head;
     queue_node_t *prev = NULL;
@@ -166,7 +167,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     }
     fprintf(stderr, "waiting on condition var:%d\n", pthread_self());
 
-    pthread_mutex_lock(temp->m);
+    //pthread_mutex_lock(temp->m);
     pthread_cond_wait(temp->c, serial->m);
 
     fprintf(stderr, "coming back to life %d\n", pthread_self());
