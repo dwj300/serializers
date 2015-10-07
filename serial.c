@@ -35,7 +35,7 @@ void Serial_Exit(serial_t* serial)
                 print("found a valid thing");
                 int res = pthread_cond_signal(node->c);
                 char str[50];
-                sprintf(str, "res+signal2: %d");
+                sprintf(str, "res+signal2: %d", res);
                 print(str);
                 stop = 1;
                 if (prev != NULL)
@@ -145,10 +145,10 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
 
     pthread_cond_init(temp->c, NULL);
     //pthread_mutex_init(temp->m, NULL);
-
+    /*
     queue_node_t *node = queue->head;
     queue_node_t *prev = NULL;
-    /*
+    
     while(node != NULL)
     {
         if (node->func())
