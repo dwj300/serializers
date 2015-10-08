@@ -111,7 +111,7 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
     return false;
 }
 
-void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
+void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func, int priority)
 {
     //fprintf(stderr, "%d\n", serial->m->__data__.__owner);
     // Add to back of queue
@@ -131,9 +131,19 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     }
     else
     {
-        while(temp->next != NULL)
+        if (queue->going_up)
         {
-            temp = temp->next;
+            while(temp->next != NULL && temp->next->priority < priority)
+            {
+                temp = temp->next;
+            }
+        }
+        else
+        {
+            while(temp->next != NULL && temp->next->priority > priority)
+            {
+                temp = temp->next;
+            }
         }
         temp->next = malloc(sizeof(queue_node_t));
         temp = temp->next;
@@ -141,6 +151,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     temp->func = func;
     temp->next = NULL;
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
+    temp->priority = priority;
     //temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
     pthread_cond_init(temp->c, NULL);
@@ -148,7 +159,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t* func)
     /*
     queue_node_t *node = queue->head;
     queue_node_t *prev = NULL;
-    
+
     while(node != NULL)
     {
         if (node->func())
