@@ -20,7 +20,6 @@ typedef struct queue_node
 typedef struct queue
 {
     queue_node_t *head;
-    bool going_up;
 } queue_t;
 
 typedef struct crowd
@@ -28,15 +27,15 @@ typedef struct crowd
     int count;
 } crowd_t;
 
-typedef struct serial_node
+typedef struct queueListNode
 {
     queue_t *queue;
-    struct serial_node *next;
-} serial_node_t;
+    struct queueListNode *next;
+} queue_list_node_t;
 
 typedef struct serial
 {
-    serial_node_t *queues;
+    queue_list_node_t *queueBeingServed;
     pthread_mutex_t *m;
 } serial_t;
 
@@ -48,7 +47,9 @@ queue_t* Create_Queue(serial_t*);
 crowd_t* Create_Crowd(serial_t*);
 int Queue_Empty(serial_t* serial, queue_t* queue);
 int Crowd_Empty(serial_t* serial, crowd_t* crowd);
-void Serial_Enqueue(serial_t* serial, queue_t* queue, cond_t *func, int priority);
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func, int priority);
 void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func);
 void print(char *string);
+bool All_Queues_Empty(serial_t* serial);
+
 
