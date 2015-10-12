@@ -1,6 +1,7 @@
 .DS_Store
 rw
 rw.dSYM
+dp.dSYM
 dp
 ds
 /ser_proj/*

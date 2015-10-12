@@ -22,7 +22,7 @@ void Serial_Enter(serial_t* serial)
 
 bool All_Queues_Empty(serial_t* serial)
 {
-    bool moreQueuesToCheck = true;
+    // bool moreQueuesToCheck = true;
 
     //We want to break when we've checked all the queues. Because our queue
     //  list is circular, we'll be looking for when we 'wrap around.' To keep
