@@ -1,4 +1,5 @@
 #include "dp_serial.h"
+#include <stdio.h>
 
 int left(int i)
 {
@@ -17,23 +18,26 @@ int true_func()
 
 cond_t* eat_queue_cond(int tid)
 {
+	fprintf(stderr, "thread %d in eat queue cond: %d\n", tid, (forks[left(tid)] && forks[right(tid)]));
 	return forks[left(tid)] && forks[right(tid)];
 }
-/*
+
 void Eat(int phil_id, void *(*model_eat()))
 {
 	Serial_Enter(serializer);
 	// Enter queue
-	Serial_Enqueue(serializer, waiting_q, &eat_queue_cond, phil_id);
-	print("gots a serializer");
+	Serial_Enqueue(serializer, waiting_q, &eat_queue_cond, 0, phil_id);
+	printf("%d gots a serializer\n", phil_id);
 	// Got the serializer, means we can eat.
 	forks[left(phil_id)] = 0;
 	forks[right(phil_id)] = 0;
 
 	Serial_Join_Crowd(serializer, eating_crowd, model_eat, phil_id);
-	Serial_Enqueue(serializer, waiting_q, &eat_queue_cond, phil_id);
+
+	//Serial_Enqueue(serializer, waiting_q, &eat_queue_cond, phil_id);
 	forks[left(phil_id)] = 1;
 	forks[right(phil_id)] = 1;
+	//Serial_Exit(serializer);
 }
 
 void Think(int phil_id, void *(*model_think()))
@@ -42,7 +46,10 @@ void Think(int phil_id, void *(*model_think()))
 	Serial_Enter(serializer);
 	Serial_Join_Crowd(serializer, thinking_crowd, model_think, phil_id);
 	Serial_Exit(serializer);
-}*/
+}
+
+//trivial impl -- doesnt actually work on more than 2
+/*
 void Eat(int phil_id, void *(*model_eat()))
 {
 	Serial_Enter(serializer);
@@ -50,6 +57,8 @@ void Eat(int phil_id, void *(*model_eat()))
 	forks[left(phil_id)] = 0;
 	forks[right(phil_id)] = 0;
 	model_eat(phil_id);
+	forks[left(phil_id)] = 1;
+	forks[right(phil_id)] = 1;
 	Serial_Exit(serializer);
 }
 
@@ -57,7 +66,7 @@ void Think(int phil_id, void *(*model_think()))
 {
 	model_think(phil_id);
 }
-
+*/
 
 void Init_dp(int nphilosophers)
 {

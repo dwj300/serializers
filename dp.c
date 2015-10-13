@@ -21,6 +21,7 @@ void *model_eat(int id)
 	printf("Philosopher #%d is eating.\n", id);
 	double eat_time = ( rand() % (NUM_PHILOSOPHERS * 2) ) * EatTime - (NUM_PHILOSOPHERS - 1) * ThinkTime;
 	sleep( (eat_time > 0) ? eat_time : EatTime);
+	fprintf(stderr,"done sleeping\n");
 	return NULL;
 }
 
