@@ -6,14 +6,17 @@ void print_queue(serial_t *serial)
 {
     if (serial->queueBeingServed->queue == NULL)
         return;
-    printf("Queue: ");
+    print("Queue: ");
     queue_node_t *cur = serial->queueBeingServed->queue->head;
     while(cur != NULL)
     {
-        printf("%d ", cur->tid);
+        char str[50];
+        //sprintf(str, "%d ", ((data_t *)(cur->data))->tid);
+        print(str);
         cur = cur->next;
     }
-    printf("\n");
+
+    print("\n");
 }
 
 serial_t* Create_Serial()
@@ -77,13 +80,19 @@ void signal_new_thread(serial_t *serial)
             queue_node_t *prev = NULL;
             while(node != NULL)
             {
-                if (node->func(node->tid))
+                if (node->func(node->data))
                 {
                     print("found a valid thing");
-                    int res = pthread_cond_signal(node->c);
+                    
+
                     char str[50];
-                    sprintf(str, "res+signal2: %d", res);
+                    //sprintf(str, "signaling tid: %d\n", ((data_t *)node->data)->tid);
                     print(str);
+
+                    int res = pthread_cond_signal(node->c);
+                    char str1[50];
+                    //sprintf(str1, "res+signal2: %d", res);
+                    print(str1);
                     nextHolderFound = true;
                     if (prev == NULL)
                     {
@@ -168,7 +177,7 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
     return false;
 }
 
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, int tid)
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, void *data)
 {
     //fprintf(stderr, "%d\n", serial->m->__data__.__owner);
     // Add to back of queue
@@ -180,7 +189,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     //If the queue is empty
     if (temp == NULL)
     {
-        if (func(tid) == true)
+        if (func(data) == true)
         {
             return; //If the node would be the first in the queue, and it's ready, don't join, just continue in the serializer
         }
@@ -189,18 +198,32 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     }
     else
     {
+        bool all_false = true;
         while(temp->next != NULL && priority <= temp->next->priority)
         {
+            if(temp->func(temp->data) == 1)
+            {
+                all_false = false;
+            }
+
             temp = temp->next;
         }
         if(temp->next != NULL) //If we're inserting into the middle of the queue
         {
+            if (all_false && (func(data) == 1))
+            {
+                return;
+            }
             queue_node_t *afterNew = temp->next;
             temp->next = malloc(sizeof(queue_node_t));
             temp->next->next = afterNew;
         }
         else
         {
+            if (all_false && (func(data) == 1))
+            {
+                return;
+            }
             temp->next = malloc(sizeof(queue_node_t));
             temp->next->next = NULL;
         }
@@ -210,7 +233,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     temp->func = func;
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
     temp->priority = priority;
-    temp->tid = tid;
+    temp->data = data;
     //temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
     pthread_cond_init(temp->c, NULL);
@@ -221,13 +244,17 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
 
     signal_new_thread(serial);
 
+    char str[50];
+    //sprintf(str, "starting cond wait: %d\n", ((data_t *)data)->tid);
+    print(str);
+
     pthread_cond_wait(temp->c, serial->m);
-    
+
     print("coming back to life");
     // Serial_Enter(serial);
 }
 
-void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, int tid)
+void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, void *data)
 {
     // already have serializer
     // join the crowd
@@ -236,15 +263,14 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, int tid)
     // serial_enter
     crowd->count += 1;
     Serial_Exit(serial);
-    /*if (data != NULL)
+    if (data != NULL)
     {
         func(data);
     }
     else
     {
         func();
-    }*/
-    func(tid);
+    }
     crowd->count -= 1;
     print("leaving crowd");
     Serial_Enter(serial);
