@@ -8,4 +8,5 @@ serial_t* serializer;
 queue_t* waiting_q;
 crowd_t* eating_crowd;
 crowd_t* thinking_crowd;
-int *philosophers;
+int *forks;
+int num_phil;

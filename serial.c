@@ -62,7 +62,7 @@ void Serial_Exit(serial_t* serial)
             queue_node_t *prev = NULL;
             while(node != NULL && !nextHolderFound)
             {
-                if (node->func())
+                if (node->func(node->tid))
                 {
                     print("found a valid thing");
                     nextHolderFound = true;
@@ -144,7 +144,7 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
     return false;
 }
 
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority)
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, int data)
 {
     //fprintf(stderr, "%d\n", serial->m->__data__.__owner);
     // Add to back of queue
@@ -156,7 +156,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     //If the queue is empty
     if (temp == NULL)
     {
-        if (func() == true)
+        if (func(data) == true)
         {
             return; //If the node would be the first in the queue, and it's ready, don't join, just continue in the serializer
         }
@@ -186,6 +186,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     temp->func = func;
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
     temp->priority = priority;
+    temp->tid = data;
     //temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
     pthread_cond_init(temp->c, NULL);

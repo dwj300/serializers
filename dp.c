@@ -14,7 +14,7 @@
 #define DELAY 100000
 #define EatTime 1.0
 #define ThinkTime 1.0
-#define NUM_PHILOSOPHERS 1
+#define NUM_PHILOSOPHERS 2
 
 void *model_eat(int id)
 {

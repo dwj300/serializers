@@ -14,6 +14,7 @@ typedef struct queue_node
     pthread_cond_t *c;
     cond_t *func;
     int priority;
+    int tid;
     struct queue_node *next;
 } queue_node_t;
 
@@ -47,7 +48,7 @@ queue_t* Create_Queue(serial_t*);
 crowd_t* Create_Crowd(serial_t*);
 int Queue_Empty(serial_t* serial, queue_t* queue);
 int Crowd_Empty(serial_t* serial, crowd_t* crowd);
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func, int priority);
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func, int priority, int tid);
 void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, int tid);
 void print(char *string);
 bool All_Queues_Empty(serial_t* serial);
