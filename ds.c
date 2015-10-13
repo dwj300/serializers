@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 	// Wait until all threads are done
 	int i;
 	for (i = 1; i < size; i++)
-		pthread_join (req_thread[i], NULL);
+		pthread_join((*req_thread[i]), NULL);
 	for(i = 1; i < size; i++)
 	printf("RequestID = %d, ArrivalTime = %f, CylinderNo = %d, ServicedSeqNo = %d, SeekedCylinders = %d.\n",
 			i, arrival_time[i], CylinderNo[i], ServicedSeqNo[i], SeekedCylinders[i]);
