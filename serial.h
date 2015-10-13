@@ -4,7 +4,11 @@
 #define true 1
 #define false 0
 
+#define INT2VOIDP(i) (void*)(uintptr_t)(i)
+
 typedef int (cond_t)();
+
+//typedef int *(*(cond_t)()) ;
 
 typedef int bool;
 
@@ -14,7 +18,7 @@ typedef struct queue_node
     pthread_cond_t *c;
     cond_t *func;
     int priority;
-    int tid;
+    int *tid;
     struct queue_node *next;
 } queue_node_t;
 

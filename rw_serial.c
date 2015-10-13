@@ -24,12 +24,12 @@ void* write_data()
 	return NULL;
 }
 
-cond_t* read_queue_cond()
+int read_queue_cond()
 {
 	return Crowd_Empty(serializer, writers_crowd);
 }
 
-cond_t* write_queue_cond()
+int write_queue_cond()
 {
 	return (Crowd_Empty(serializer, readers_crowd) &&
 		Crowd_Empty(serializer, writers_crowd));

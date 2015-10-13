@@ -18,6 +18,7 @@
 
 void *model_eat(int id)
 {
+	//int id = (int)data;
 	printf("Philosopher #%d is eating.\n", id);
 	double eat_time = ( rand() % (NUM_PHILOSOPHERS * 2) ) * EatTime - (NUM_PHILOSOPHERS - 1) * ThinkTime;
 	sleep( (eat_time > 0) ? eat_time : EatTime);
@@ -29,6 +30,7 @@ void *model_eat(int id)
 
 void *model_think(int id)
 {
+	//int id = (int)data;
 	printf("Philosopher #%d is thinking.\n", id);
 	double think_time = ( rand() % (NUM_PHILOSOPHERS * 2) ) * ThinkTime - (NUM_PHILOSOPHERS - 1) * EatTime;
 	sleep( (think_time > 0) ? think_time : ThinkTime);

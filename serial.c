@@ -2,6 +2,20 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+void print_queue(serial_t *serial)
+{
+    if (serial->queueBeingServed->queue == NULL)
+        return;
+    printf("Queue: ");
+    queue_node_t *cur = serial->queueBeingServed->queue->head;
+    while(cur != NULL)
+    {
+        printf("%d ", cur->tid);
+        cur = cur->next;
+    }
+    printf("\n");
+}
+
 serial_t* Create_Serial()
 {
     serial_t *serializer = malloc(sizeof(serial_t));
@@ -22,9 +36,7 @@ void Serial_Enter(serial_t* serial)
 
 bool All_Queues_Empty(serial_t* serial)
 {
-    bool moreQueuesToCheck = true;
-
-    //We want to break when we've checked all the queues. Because our queue
+    //  We want to break when we've checked all the queues. Because our queue
     //  list is circular, we'll be looking for when we 'wrap around.' To keep
     //  track of this, we'll note the active one, but we'll start checking at
     //  the queue *after* the active one. If make it around to the active one,
@@ -46,13 +58,15 @@ bool All_Queues_Empty(serial_t* serial)
     return false;
 }
 
-void Serial_Exit(serial_t* serial)
+void signal_new_thread(serial_t *serial)
 {
+    print_queue(serial);
+    print("starting search\n");
     // Search through the queues of the serializer until we find the next
     // thread waiting and ready to enter
     bool nextHolderFound = false;
-    queue_list_node_t *start = serial->queueBeingServed->queue;
-    // If there's no one to signal, just leave the serializer
+    queue_list_node_t *start = serial->queueBeingServed;
+    //If there's no one to signal, just leave the serializer
     if(!All_Queues_Empty(serial))
     {
         do
@@ -93,6 +107,12 @@ void Serial_Exit(serial_t* serial)
                 serial->queueBeingServed = serial->queueBeingServed->next;
         } while(!nextHolderFound && (serial->queueBeingServed != start));
     }
+    print("finished search\n");
+}
+
+void Serial_Exit(serial_t* serial)
+{
+    signal_new_thread(serial);
     print("unlocking mutex");
     pthread_mutex_unlock(serial->m);
 }
@@ -198,11 +218,13 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     print("waiting on condition var");
 
     //pthread_mutex_lock(temp->m);
+
+    signal_new_thread(serial);
+
     pthread_cond_wait(temp->c, serial->m);
     
-    Serial_Exit(serial);
     print("coming back to life");
-    Serial_Enter(serial);
+    // Serial_Enter(serial);
 }
 
 void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, int tid)
@@ -214,6 +236,14 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, int tid)
     // serial_enter
     crowd->count += 1;
     Serial_Exit(serial);
+    /*if (data != NULL)
+    {
+        func(data);
+    }
+    else
+    {
+        func();
+    }*/
     func(tid);
     crowd->count -= 1;
     print("leaving crowd");
@@ -225,3 +255,4 @@ void print(char *string)
 {
     //fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
 }
+
