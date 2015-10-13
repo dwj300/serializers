@@ -14,7 +14,6 @@ typedef int bool;
 
 typedef struct queue_node
 {
-    pthread_mutex_t *m;
     pthread_cond_t *c;
     cond_t *func;
     int priority;
@@ -41,6 +40,7 @@ typedef struct queueListNode
 typedef struct serial
 {
     queue_list_node_t *queueBeingServed;
+    queue_node_t *onDeck;
     pthread_mutex_t *m;
 } serial_t;
 

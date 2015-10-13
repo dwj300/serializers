@@ -75,24 +75,23 @@ void signal_new_thread(serial_t *serial)
         do
         {
             queue_node_t *node = serial->queueBeingServed->queue->head;
-            if(node == NULL)
-                print("the fuck?");
             queue_node_t *prev = NULL;
             while(node != NULL)
             {
+                serial->onDeck = node;
                 if (node->func(node->data))
                 {
                     print("found a valid thing");
                     
 
-                    char str[50];
+                    //char str[50];
                     //sprintf(str, "signaling tid: %d\n", ((data_t *)node->data)->tid);
-                    print(str);
-
-                    int res = pthread_cond_signal(node->c);
-                    char str1[50];
+                    //print(str);
+                    pthread_cond_signal(node->c);
+                    //int res = pthread_cond_signal(node->c);
+                    //char str1[50];
                     //sprintf(str1, "res+signal2: %d", res);
-                    print(str1);
+                    //print(str1);
                     nextHolderFound = true;
                     if (prev == NULL)
                     {
