@@ -48,8 +48,8 @@ bool All_Queues_Empty(serial_t* serial)
 
 void Serial_Exit(serial_t* serial)
 {
-    //Search through the queues of the serializer until we find the next
-    //  thread waiting and ready to enter
+    // Search through the queues of the serializer until we find the next
+    // thread waiting and ready to enter
     bool nextHolderFound = false;
     //If there's no one to signal, just leave the serializer
     if(!All_Queues_Empty(serial))
@@ -60,15 +60,11 @@ void Serial_Exit(serial_t* serial)
             if(node == NULL)
                 print("the fuck?");
             queue_node_t *prev = NULL;
-            while(node != NULL)
+            while(node != NULL && !nextHolderFound)
             {
                 if (node->func())
                 {
                     print("found a valid thing");
-                    int res = pthread_cond_signal(node->c);
-                    char str[50];
-                    sprintf(str, "res+signal2: %d", res);
-                    print(str);
                     nextHolderFound = true;
                     if (prev == NULL)
                     {
@@ -78,6 +74,10 @@ void Serial_Exit(serial_t* serial)
                     {
                         prev->next = node->next;
                     }
+                    int res = pthread_cond_signal(node->c);
+                    char str[50];
+                    sprintf(str, "res+signal2: %d", res);
+                    print(str);
                     break;
                 }
                 else
@@ -224,7 +224,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     Serial_Enter(serial);
 }
 
-void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
+void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, int tid)
 {
     // already have serializer
     // join the crowd
@@ -233,7 +233,7 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
     // serial_enter
     crowd->count += 1;
     Serial_Exit(serial);
-    func();
+    func(tid);
     crowd->count -= 1;
     print("leaving crowd");
     Serial_Enter(serial);
@@ -242,5 +242,5 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
 
 void print(char *string)
 {
-    fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
+    //fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
 }
