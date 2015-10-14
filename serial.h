@@ -46,6 +46,7 @@ typedef struct serial
 
 typedef struct data
 {
+    int seq;
     int tid;
     int seeked_cylinders;
     cond_t *func;

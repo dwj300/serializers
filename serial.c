@@ -308,3 +308,28 @@ void print(char *string)
     // fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
 }
 
+
+void PrintQueue(queue_t * toPrint)
+{
+    if(toPrint == NULL)
+    {   
+//        print("Well shit");
+        return;
+    }   
+    if(toPrint->head == NULL)
+    {   
+//        print("Well shit2");
+        return;
+    }   
+    queue_node_t * selector = toPrint->head;
+    while(selector!=NULL)
+    {   
+        //char temp[100];
+        //sprintf(temp, " %4d ", selector->priority);
+        //print (temp);
+        fprintf(stderr, "p:%d, ", selector->priority);
+        selector = selector->next;
+    }   
+
+}
+
