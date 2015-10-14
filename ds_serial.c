@@ -9,6 +9,25 @@
 #include <math.h>
 #include "ds_serial.h"
 
+
+void Switch()
+{
+    if(current_queue == up_queue)
+        current_queue = down_queue;
+    else
+        current_queue = up_queue;
+}
+
+bool GoingUp()
+{
+    return (current_queue == up_queue);
+}
+
+bool GoingDown()
+{
+    return !GoingUp();
+}
+
 void PrintQueue(queue_t * toPrint)
 {
     if(toPrint == NULL)
@@ -30,15 +49,9 @@ void PrintQueue(queue_t * toPrint)
     }
 }
 
-bool GoingUp()
-{
-    return (serializer->queueBeingServed->queue == up_queue);
-}
 
-bool GoingDown()
-{
-    return (serializer->queueBeingServed->queue == down_queue);
-}
+
+
 
 int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int id)
 {
@@ -46,53 +59,72 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
 
     uint32_t serviceNum = 0;
     //Get access to the serializer's synchronization constructs
+
 	Serial_Enter(serializer);
 
-    bool going_up = GoingUp();
-    if(going_up)
-    {
-        print("Going Up!");
-    }
-
-    if(GoingDown())
-    {
-        print("Going Down!");
-    }
+    scheduler_data_t* newNodeData = (scheduler_data_t*)malloc(sizeof(scheduler_data_t));
+    serviceNum = newNodeData->seq = disk_access_sequence_number++;
 
     PrintQueue(up_queue);
     PrintQueue(down_queue);
 
+    bool scheduledInUp = false;
+
     //When a request is issued, we have to choose which queue to place the request into.
     //  If the target is 'coming up' in the direction of the queue being served, insert
     //  it into the queue being served, and vice-versa
-    if( (going_up && cylinderno > just_finished) || (!going_up && cylinderno <= just_finished) )
+    if( (GoingUp() && cylinderno >= head_position)) //Going up, target is ahead of us
     {
         sprintf(temp, "Scheduling request for cylinder %d in the up queue", cylinderno);
         print(temp);
-        Serial_Enqueue(serializer, up_queue, up_cond, cylinder_count-cylinderno, NULL); //When going up, requests that are lower on disk should have a higher priority
+        scheduledInUp = true;
+        Serial_Enqueue(serializer, up_queue, up_cond, cylinder_count-cylinderno, newNodeData); //When going up, requests that are lower on disk should have a higher priority
     }
-    else if( (going_up && cylinderno <= just_finished) || (!going_up && cylinderno > just_finished) )
+    else if( GoingDown() && cylinderno > head_position )
+    {
+        sprintf(temp, "Scheduling request for cylinder %d in the up queue", cylinderno);
+        print(temp);
+        scheduledInUp = true;
+        Serial_Enqueue(serializer, up_queue, up_cond, cylinder_count-cylinderno, newNodeData); //When going up, requests that are lower on disk should have a higher priority
+    }
+    else if( GoingDown() && cylinderno <= head_position )  //Going down, target behind us (approaching it)
     {
         sprintf(temp, "Scheduling request for cylinder %d in the down queue", cylinderno);
         print(temp);
-        Serial_Enqueue(serializer, down_queue, up_cond, cylinder_count, NULL);
+        Serial_Enqueue(serializer, down_queue, down_cond, cylinderno, newNodeData);
+    }
+    else if( GoingUp() && cylinderno < head_position ) //Going up and target is behind us (getting farther)
+    {
+        sprintf(temp, "Scheduling request for cylinder %d in the down queue", cylinderno);
+        print(temp);
+        Serial_Enqueue(serializer, down_queue, down_cond, cylinderno, newNodeData);
     }
     else
     {
         print("Logic error");
+        exit(-1);
     }
 
+
+    if( (scheduledInUp && GoingDown()) || (!scheduledInUp && GoingDown()) )
+    {
+        Switch();
+    }
+
+    data_t* newData = (data_t*)malloc(sizeof(data_t));
+    newData->tid = id;
+    newData->seeked_cylinders = abs(head_position-cylinderno);
+
     //When we exit the queue, the request can be serviced
-    Serial_Join_Crowd(serializer, disk_access_crowd,(void *)model_request, NULL);
+    Serial_Join_Crowd(serializer, disk_access_crowd,(void *)model_request, newData);
 
     //Request satisfied,
-    sprintf(temp, "Seeked %s from %d to %d", (going_up ? "downward" : "upward"), just_finished, cylinderno);
-    print(temp);
+    //sprintf(temp, "Seeked %s from %d to %d", (going_up ? "downward" : "upward"), head_position, cylinderno);
+    //print(temp);
 
-    *seekedcylinders += abs(just_finished-cylinderno);
-    just_finished = cylinderno;
+    *seekedcylinders += abs(head_position-cylinderno);
+    head_position = cylinderno;
 
-    serviceNum = disk_access_sequence_number++;
 
     Serial_Exit(serializer);
     return serviceNum;
@@ -104,17 +136,60 @@ void Init_ds(int ncylinders, int CylinderSeekTime)
 	serializer = Create_Serial();
 	cylinder_count = ncylinders;
 	up_queue = Create_Queue(serializer);
-	down_queue = Create_Queue(serializer);
+	current_queue = down_queue = Create_Queue(serializer);
     disk_access_crowd = Create_Crowd(serializer);
     disk_access_sequence_number = 0;
+    head_position = 0;
 }
 
-cond_t* up_cond()
+void serviceRequest(data_t* data)
 {
-    return ( Crowd_Empty(serializer, disk_access_crowd) && serializer->onDeck == up_queue->head );
+    model_request(data->tid, data->seeked_cylinders);
 }
 
-cond_t* down_cond()
+
+cond_t* up_cond(void * data)
 {
-    return ( Crowd_Empty(serializer, disk_access_crowd) && serializer->onDeck == down_queue->head );
+    int seq = ((scheduler_data_t*)data)->seq;
+
+    return ( Crowd_Empty(serializer, disk_access_crowd)
+                &&(
+                    Queue_Empty(serializer, up_queue) && Queue_Empty(serializer, down_queue)
+                    ||
+                    (
+                        current_queue == up_queue
+                        && ( (scheduler_data_t*)(serializer->queueBeingServed->queue->head->data) )->seq == seq
+                    )
+                    ||
+                    (
+                        Queue_Empty(serializer, down_queue)
+                        && ( (scheduler_data_t*)(serializer->queueBeingServed->next->queue->head->data) )->seq == seq
+                    )
+                   )
+
+
+            );
+}
+
+cond_t* down_cond(void * data)
+{
+    int seq = ((scheduler_data_t*)data)->seq;
+
+    return ( Crowd_Empty(serializer, disk_access_crowd)
+                &&(
+                    Queue_Empty(serializer, up_queue) && Queue_Empty(serializer, down_queue)
+                    ||
+                    (
+                        current_queue == down_queue
+                        && ( (scheduler_data_t*)(serializer->queueBeingServed->queue->head->data) )->seq== seq
+                    )
+                    ||
+                    (
+                        Queue_Empty(serializer, up_queue)
+                        && ( (scheduler_data_t*)(serializer->queueBeingServed->next->queue->head->data) )->seq == seq
+                    )
+                   )
+
+
+            );
 }

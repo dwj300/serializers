@@ -47,6 +47,7 @@ typedef struct serial
 typedef struct data
 {
     int tid;
+    int seeked_cylinders;
 } data_t;
 
 serial_t* Create_Serial();
