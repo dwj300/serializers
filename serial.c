@@ -72,12 +72,12 @@ void signal_new_thread(serial_t *serial)
     if(!All_Queues_Empty(serial))
     {
 	// Don't need to deal with single queue case, because all queues empty takes care of that
-	if(Queue_Empty(serial, serial->queueBeingServed->queue)) 
+	if(Queue_Empty(serial, serial->queueBeingServed->queue))
 	{
             serial->queueBeingServed = serial->queueBeingServed->next;
             printf("switching direction\n");
 	}
- 
+
             queue_node_t *node = serial->queueBeingServed->queue->head;
             queue_node_t *prev = NULL;
             while(node != NULL)
@@ -86,8 +86,8 @@ void signal_new_thread(serial_t *serial)
                 if (node->func(node->data))
                 {
                     print("found a valid thing");
-                    
 
+                    fprintf(stderr, "signaling %d\n", node->priority);
                     //char str[50];
                     //sprintf(str, "signaling tid: %d\n", ((data_t *)node->data)->tid);
                     //print(str);
@@ -176,7 +176,9 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
 
 void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, void *data)
 {
-    fprintf(stderr, "before enqueue: pri:%d\n", priority);    
+    signal_new_thread(serial);
+
+    fprintf(stderr, "before enqueue: pri:%d\n", priority);
     fprintf(stderr, "Current Queue: ");
     PrintQueue(serial->queueBeingServed->queue);
     fprintf(stderr, "\n");
@@ -252,7 +254,7 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     temp->data = data;
     //temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
 
-    fprintf(stderr, "after enqueue:\n");    
+    fprintf(stderr, "after enqueue:\n");
     fprintf(stderr, "Current Queue: ");
     PrintQueue(serial->queueBeingServed->queue);
     fprintf(stderr, "\n");
@@ -268,15 +270,13 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
 
     //pthread_mutex_lock(temp->m);
 
-    signal_new_thread(serial);
-
     char str[50];
     //sprintf(str, "starting cond wait: %d\n", ((data_t *)data)->tid);
     print(str);
 
     pthread_cond_wait(temp->c, serial->m);
 
-    print("coming back to life");
+    fprintf(stderr, "coming back to life: %d\n", priority);
     // Serial_Enter(serial);
 }
 
@@ -297,9 +297,9 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, void *dat
     {
         func();
     }
-    crowd->count -= 1;
     print("leaving crowd");
     Serial_Enter(serial);
+    crowd->count -= 1;
 
 }
 
@@ -312,24 +312,24 @@ void print(char *string)
 void PrintQueue(queue_t * toPrint)
 {
     if(toPrint == NULL)
-    {   
+    {
 //        print("Well shit");
         return;
-    }   
+    }
     if(toPrint->head == NULL)
-    {   
+    {
 //        print("Well shit2");
         return;
-    }   
+    }
     queue_node_t * selector = toPrint->head;
     while(selector!=NULL)
-    {   
+    {
         //char temp[100];
         //sprintf(temp, " %4d ", selector->priority);
         //print (temp);
         fprintf(stderr, "p:%d, ", selector->priority);
         selector = selector->next;
-    }   
+    }
 
 }
 

@@ -28,8 +28,9 @@ int rc;
 // Call this function inside your crowd [DON'T CHANGE]
 void model_request(int id, int seekedcylinders)
 {
-	printf("Request #%d is serving.\n", id);
+	fprintf(stderr, "Request #%d is serving.\n", id);
 	sleep(seekedcylinders * CylinderSeekTime);
+	fprintf(stderr, "Request #%d is done\n", id);
 };
 
 void *action(void* id)
@@ -41,7 +42,7 @@ void *action(void* id)
 	// and return the serviced sequence number and the number of cylinders passed since last request
         ServicedSeqNo[tid] = Disk_Request(CylinderNo[tid], (void*)model_request, SeekedCylinders, tid);
 
-	printf("Request #%d has been serviced.\n", tid);
+	//printf("Request #%d has been serviced.\n", tid);
 	return NULL;
 }
 

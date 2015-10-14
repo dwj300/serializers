@@ -73,7 +73,7 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
     //  it into the queue being served, and vice-versa
     if( (GoingUp() && cylinderno >= head_position)) //Going up, target is ahead of us
     {
-        fprintf(stderr, "Scheduling request #%d for cylinder %d in the up queue\n", serviceNum, cylinderno);
+        //fprintf(stderr, "Scheduling request #%d for cylinder %d in the up queue\n", serviceNum, cylinderno);
         //sprintf(temp, "Scheduling request for cylinder %d in the up queue", cylinderno);
         //print(temp);
         //scheduledInUp = true;
@@ -81,7 +81,7 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
     }
     else if( GoingDown() && cylinderno > head_position )
     {
-        fprintf(stderr, "Scheduling request for cylinder %d in the up queue\n", cylinderno);
+        //fprintf(stderr, "Scheduling request for cylinder %d in the up queue\n", cylinderno);
         //sprintf(temp, "Scheduling request for cylinder %d in the up queue", cylinderno);
         //print(temp);
         //scheduledInUp = true;
@@ -89,14 +89,14 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
     }
     else if( GoingDown() && cylinderno <= head_position )  //Going down, target behind us (approaching it)
     {
-        fprintf(stderr, "Scheduling request for cylinder %d in the down queue\n", cylinderno);
+        //fprintf(stderr, "Scheduling request for cylinder %d in the down queue\n", cylinderno);
         //sprintf(temp, "Scheduling request for cylinder %d in the down queue", cylinderno);
         //print(temp);
         Serial_Enqueue(serializer, down_queue, down_cond, cylinderno, newNodeData);
     }
     else if( GoingUp() && cylinderno < head_position ) //Going up and target is behind us (getting farther)
     {
-        fprintf(stderr, "Scheduling request for cylinder %d in the down queue\n", cylinderno);
+        //fprintf(stderr, "Scheduling request for cylinder %d in the down queue\n", cylinderno);
         //sprintf(temp, "Scheduling request for cylinder %d in the down queue", cylinderno);
         //print(temp);
         Serial_Enqueue(serializer, down_queue, down_cond, cylinderno, newNodeData);
@@ -113,20 +113,24 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
         Switch();
     }*/
 
+    int oldPosition = head_position;
+
     data_t* newData = (data_t*)malloc(sizeof(data_t));
     newData->seq = serviceNum;
     newData->tid = id;
-    newData->seeked_cylinders = abs(head_position-cylinderno);
+    *seekedcylinders = newData->seeked_cylinders = abs(head_position-cylinderno);
     newData->func = model_request;
+
+    head_position = cylinderno;
+
+    fprintf(stderr, "Head moved to %d for service. We moved %s from %d \n", head_position, GoingUp()? "upward" : "downward", oldPosition);
+
     //When we exit the queue, the request can be serviced
     Serial_Join_Crowd(serializer, disk_access_crowd, &serviceRequest, newData);
 
     //Request satisfied,
     //sprintf(temp, "Seeked %s from %d to %d", (going_up ? "downward" : "upward"), head_position, cylinderno);
     //print(temp);
-
-    *seekedcylinders += abs(head_position-cylinderno);
-    head_position = cylinderno;
 
 
     Serial_Exit(serializer);
