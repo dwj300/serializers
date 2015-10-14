@@ -39,7 +39,7 @@ void *action(void* id)
 	SeekedCylinders[tid] = -1;
 	// Get the cylinder number, and model_request function
 	// and return the serviced sequence number and the number of cylinders passed since last request
-    ServicedSeqNo[tid] = Disk_Request(CylinderNo[tid], (void*)model_request, SeekedCylinders, tid);
+        ServicedSeqNo[tid] = Disk_Request(CylinderNo[tid], (void*)model_request, SeekedCylinders, tid);
 
 	printf("Request #%d has been serviced.\n", tid);
 	return NULL;
