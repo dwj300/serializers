@@ -48,6 +48,7 @@ typedef struct data
 {
     int tid;
     int seeked_cylinders;
+    cond_t *func;
 } data_t;
 
 serial_t* Create_Serial();

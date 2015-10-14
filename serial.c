@@ -278,6 +278,6 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, void *dat
 
 void print(char *string)
 {
-    //fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
+    // fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
 }
 
