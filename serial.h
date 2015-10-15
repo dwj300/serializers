@@ -2,19 +2,16 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+typedef long (cond_t)();
+typedef long (action_t)();
+typedef int bool;
 #define true 1
 #define false 0
 
-typedef int (cond_t)();
-
-//typedef int *(*(cond_t)()) ;
-
-typedef int bool;
-
 typedef struct queue_node
 {
-    pthread_cond_t *c;
-    cond_t *func;
+    pthread_cond_t *cVar;
+    cond_t *progress_condition;
     int priority;
     void *data;
     struct queue_node *next;
@@ -39,8 +36,7 @@ typedef struct queueListNode
 typedef struct serial
 {
     queue_list_node_t *queueBeingServed;
-    queue_node_t *onDeck;
-    pthread_mutex_t *m;
+    pthread_mutex_t *lock;
 } serial_t;
 
 serial_t* Create_Serial();
@@ -50,9 +46,7 @@ queue_t* Create_Queue(serial_t*);
 crowd_t* Create_Crowd(serial_t*);
 int Queue_Empty(serial_t* serial, queue_t* queue);
 int Crowd_Empty(serial_t* serial, crowd_t* crowd);
-void Serial_Enqueue_Data(serial_t* serial, queue_t* targetQueue, cond_t *func, int priority, void *data);
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func);
-void Serial_Join_Crowd_Data(serial_t* serial, crowd_t* crowd, cond_t* func, void *data);
-void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func);
-void print(char *string);
-bool All_Queues_Empty(serial_t* serial);
+void Serial_Enqueue_Data(serial_t* serial, queue_t* targetQueue, cond_t* progressCondition, int priority, void *data);
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *progressCondition);
+void Serial_Join_Crowd_Data(serial_t* serial, crowd_t* targetCrowd, action_t* action, void *data);
+void Serial_Join_Crowd(serial_t* serial, crowd_t* targetCrowd, action_t* action);

@@ -1,68 +1,86 @@
 #include "dp_serial.h"
 
-int left(int i)
+//Returns the index (in the fork array) of the fork at the given philosopher's left hand
+int leftHand(int philosopherNumber)
 {
-	return i;
+	return philosopherNumber;
 }
 
-int right(int i)
+//Returns the index (in the fork array) of the fork at the given philosopher's right hand
+int rightHand(int philosopherNumber)
 {
-	return (i+1) % num_phil;
+	return (philosopherNumber+1) % philosopher_count;
 }
 
-cond_t* eat_queue_cond(void* data)
+//Indicates whether a philosopher may eat
+cond_t* eat_queue_cond(void* contendingThreadData)
 {
-	int tid = ((data_t*)data)->tid;
-	return forks[left(tid)] && forks[right(tid)];
+	int hungryPhilosopherID = ((philosopher_thread_data_t*)contendingThreadData)->id;
+
+	return  forks[leftHand(hungryPhilosopherID)] == AVAILABLE
+            &&
+            forks[rightHand(hungryPhilosopherID)] == AVAILABLE;
 }
 
-void wrapper(data_t* data)
+//Performs the action specified for a philosopher in its data object
+void perform_philosopher_task(philosopher_thread_data_t* philosopherData)
 {
-	data->func(data->tid);
+	philosopherData->task(philosopherData->id);
 }
 
+//Syncronizes a given philosopher's attempt to eat
 void Eat(int phil_id, void *(*model_eat()))
 {
+    //Enter the serializer
 	Serial_Enter(serializer);
-	data_t* data = (data_t*)malloc(sizeof(data_t));
-	data->tid = phil_id;
-	data->func = model_eat;
 
-	// Enter queue
-	Serial_Enqueue_Data(serializer, waiting_q, eat_queue_cond, 0, data);
-	// Got the serializer, means we can eat.
-	forks[left(phil_id)] = 0;
-	forks[right(phil_id)] = 0;
+	// Leave the serializer, enter the waiting queue with an intent to eat
+	philosopher_thread_data_t* philosopherData = (philosopher_thread_data_t*)malloc(sizeof(philosopher_thread_data_t));
+	philosopherData->id = phil_id;
+	philosopherData->task = model_eat;
+	Serial_Enqueue_Data(serializer, waiting_to_eat_queue, eat_queue_cond, 0, philosopherData);
 
-	Serial_Join_Crowd_Data(serializer, eating_crowd, wrapper, data);
+	// After we leave the queue, we can pick up the forks and eat
+	forks[leftHand(phil_id)] = TAKEN;
+	forks[rightHand(phil_id)] = TAKEN;
+	Serial_Join_Crowd_Data(serializer, eating_crowd, perform_philosopher_task, philosopherData);
 
-	forks[left(phil_id)] = 1;
-	forks[right(phil_id)] = 1;
+    // When we finish eating and re-enter the serializer, we give up the forks
+	forks[leftHand(phil_id)] = AVAILABLE;
+	forks[rightHand(phil_id)] = AVAILABLE;
 
+    //Leave the serializer
 	Serial_Exit(serializer);
 }
 
+//Allows a given philosopher to think, outside (in a hollow region of) the serializer
 void Think(int phil_id, void *(*model_think()))
 {
-	data_t *data = malloc(sizeof(data_t));
-	data->tid = phil_id;
-	data->func = model_think;
+	// Prepare the philosopher to think
+	philosopher_thread_data_t *philosopherData = (philosopher_thread_data_t*)malloc(sizeof(philosopher_thread_data_t));
+	philosopherData->id = phil_id;
+	philosopherData->task = model_think;
 
+    //Join the thinking crowd
 	Serial_Enter(serializer);
-	Serial_Join_Crowd_Data(serializer, thinking_crowd, wrapper, data);
+	Serial_Join_Crowd_Data(serializer, thinking_crowd, perform_philosopher_task, philosopherData);
 	Serial_Exit(serializer);
 }
 
+//Inializes the dining philosophers serializer solution resources
 void Init_dp(int nphilosophers)
 {
+    //Create the serializer, the queue in which philosophers will wait to eat, and the crowds in which they will eat and think
 	serializer = Create_Serial();
-	waiting_q = Create_Queue(serializer);
+	waiting_to_eat_queue = Create_Queue(serializer);
 	thinking_crowd = Create_Crowd(serializer);
 	eating_crowd = Create_Crowd(serializer);
-	num_phil = nphilosophers;
-	forks = malloc(nphilosophers * sizeof(int));
-	for (int i = 0; i < nphilosophers; i++)
+
+	//Set up forks array
+	philosopher_count = nphilosophers;
+	forks = malloc(philosopher_count * sizeof(int));
+	for (int i = 0; i < philosopher_count; i++)
 	{
-		forks[i] = 1;
+		forks[i] = AVAILABLE;
 	}
 }

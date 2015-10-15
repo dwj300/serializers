@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
 			printf("ERROR; return code from pthread_create() is %d\n", rc);
 			exit(-1);
 		}
-		printf("Request #%d submitted @ %f.\n", CylinderNo[size], arrival_time[size]);
+		printf("Request for cylinder %d submitted @ %f.\n", CylinderNo[size], arrival_time[size]);
 		size++;
 	}
 	fclose(file);

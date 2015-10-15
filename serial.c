@@ -7,20 +7,7 @@ cond_t* call_func(void* data, cond_t* func)
     return (((data != NULL) && (func(data) == true)) || ((data == NULL) && (func() == true)));
 }
 
-serial_t* Create_Serial()
-{
-    serial_t *serializer = malloc(sizeof(serial_t));
-    serializer->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
-    serializer->queueBeingServed = NULL;
-    pthread_mutex_init(serializer->m, NULL);
-    return serializer;
-}
-
-void Serial_Enter(serial_t* serial)
-{
-    pthread_mutex_lock(serial->m);
-}
-
+//Indicates if all queues associated with the serializer are empty
 bool All_Queues_Empty(serial_t* serial)
 {
     //  We want to break when we've checked all the queues. Because our queue
@@ -45,6 +32,7 @@ bool All_Queues_Empty(serial_t* serial)
     return false;
 }
 
+// If there is a thread ready to leave a queue, signal it to do so
 void signal_new_thread(serial_t *serial)
 {
     // Search through the queues of the serializer until we find the next
@@ -62,38 +50,55 @@ void signal_new_thread(serial_t *serial)
         serial->queueBeingServed = serial->queueBeingServed->next;
     }
 
-    queue_node_t *node = serial->queueBeingServed->queue->head;
+    queue_node_t *visiting = serial->queueBeingServed->queue->head;
     queue_node_t *prev = NULL;
-    while(node != NULL)
+    while(visiting != NULL)
     {
-        serial->onDeck = node;
-        if (    call_func(node->data, node->func))
+        if (    call_func(visiting->data, visiting->progress_condition))
         {
-            pthread_cond_signal(node->c);
+            pthread_cond_signal(visiting->cVar);
             if (prev == NULL)
             {
-                serial->queueBeingServed->queue->head = node->next;
+                serial->queueBeingServed->queue->head = visiting->next;
             }
             else
             {
-                prev->next = node->next;
+                prev->next = visiting->next;
             }
             break;
         }
         else
         {
-            prev = node;
-            node = node->next;
+            prev = visiting;
+            visiting = visiting->next;
         }
     }
 }
 
+// Instantiates a serializer object
+serial_t* Create_Serial()
+{
+    serial_t *serializer = malloc(sizeof(serial_t));
+    serializer->lock = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
+    serializer->queueBeingServed = NULL;
+    pthread_mutex_init(serializer->lock, NULL);
+    return serializer;
+}
+
+//"Enters" the serializer, assuming sole control over it
+void Serial_Enter(serial_t* serial)
+{
+    pthread_mutex_lock(serial->lock);
+}
+
+// Exit the serializer, and attempt to signal a new thread waiting to enter
 void Serial_Exit(serial_t* serial)
 {
     signal_new_thread(serial);
-    pthread_mutex_unlock(serial->m);
+    pthread_mutex_unlock(serial->lock);
 }
 
+// Creates a priority queue to hold threads waiting to enter their critical section
 queue_t* Create_Queue(serial_t* serial)
 {
     //Allocate a new queue and a queue list node to hold it
@@ -118,6 +123,7 @@ queue_t* Create_Queue(serial_t* serial)
     return newQueue;
 }
 
+// Creates a crowd which allows for execution of actions 'outside' the serializer
 crowd_t* Create_Crowd(serial_t* serial)
 {
     crowd_t *crowd = malloc(sizeof(crowd_t));
@@ -125,6 +131,7 @@ crowd_t* Create_Crowd(serial_t* serial)
     return crowd;
 }
 
+// Inidicates if a given queue is empty
 int Queue_Empty(serial_t* serial, queue_t* queue)
 {
     // check if queue is empty
@@ -135,6 +142,7 @@ int Queue_Empty(serial_t* serial, queue_t* queue)
     return false;
 }
 
+// Inidicates if a given queue is empty
 int Crowd_Empty(serial_t* serial, crowd_t* crowd)
 {
     // check if crowd is empty
@@ -145,102 +153,95 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
     return false;
 }
 
-void Serial_Enqueue_Data(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, void *data)
+// Enqueues a thread into the given queue (unless it should just proceed), along with the condition of its exit and any supporting execution data
+void Serial_Enqueue_Data(serial_t* serial, queue_t* targetQueue, cond_t* progressCondition, int priority, void *data)
 {
+    //We signal first to avoid signaling ourselves - the signaled thread can not continue until we exit the serialzier
     signal_new_thread(serial);
 
-    // Add to correct spot if queue
-    // Find first node where condition is true
-    // give up serializer lock
-    queue_node_t *temp = targetQueue->head;
-
+    queue_node_t *visiting = targetQueue->head;
+    queue_node_t *toInstantiate = NULL;
     //If the queue is empty
-    if (temp == NULL)
+    if (visiting == NULL)
     {
-        if (call_func(data, func))
+        if (call_func(data, progressCondition))
         {
             return; //If the node would be the first in the queue, and it's ready, don't join, just continue in the serializer
         }
-        temp = targetQueue->head = malloc(sizeof(queue_node_t));
-        temp->next = NULL;
+        toInstantiate = targetQueue->head = malloc(sizeof(queue_node_t));
+        toInstantiate->next = NULL;
     }
     else
     {
         bool all_false = true;
-        if (priority > temp->priority)
+        if (priority > visiting->priority)
         {
-            queue_node_t *next = temp;
-            targetQueue->head = malloc(sizeof(queue_node_t));
-            targetQueue->head->next = next;
-            temp = targetQueue->head;
+            queue_node_t *oldHead = visiting;
+            toInstantiate = targetQueue->head = malloc(sizeof(queue_node_t));
+            toInstantiate->next = oldHead;
         }
         else
         {
-        while(temp->next != NULL && priority <= temp->next->priority)
-        {
-            if(call_func(temp->data, temp->func)) //((temp->data && temp->func(temp->data) == 1) || (temp->func() == 1))
+            while(visiting->next != NULL && priority <= visiting->next->priority)
             {
-            all_false = false;
-            }
+                if(call_func(visiting->data, visiting->progress_condition)) //((temp->data && temp->func(temp->data) == 1) || (temp->func() == 1))
+                {
+                    all_false = false;
+                }
 
-            temp = temp->next;
-        }
-        if(temp->next != NULL) //If we're inserting into the middle of the queue
-        {
-            if (all_false && call_func(data, func)) //((data && func(data)  == 1) || func() == 1))
-            {
-            return;
+                visiting = visiting->next;
             }
-            queue_node_t *afterNew = temp->next;
-            temp->next = malloc(sizeof(queue_node_t));
-            temp->next->next = afterNew;
-        }
-        // End of queue
-        else
-        {
-            if (all_false && call_func(data, func)) //((data && func(data)  == 1) || func() == 1))
+            if(visiting->next != NULL) //If we're inserting into the middle of the queue
             {
-            return;
+                if (all_false && call_func(data, progressCondition)) //((data && func(data)  == 1) || func() == 1))
+                {
+                    return;
+                }
+                queue_node_t *afterNew = visiting->next;
+                visiting->next = malloc(sizeof(queue_node_t));
+                visiting->next->next = afterNew;
             }
-            temp->next = malloc(sizeof(queue_node_t));
-            temp->next->next = NULL;
-        }
-        temp = temp->next;
+            // End of queue
+            else
+            {
+                if (all_false && call_func(data, progressCondition)) //((data && func(data)  == 1) || func() == 1))
+                {
+                    return;
+                }
+                visiting->next = malloc(sizeof(queue_node_t));
+                visiting->next->next = NULL;
+            }
+            toInstantiate = visiting->next;
         }
     }
-    //In all cases, temp points to the new node
-    temp->func = func;
-    temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
-    temp->priority = priority;
-    temp->data = data;
+    //In all cases, temp points to the new node, which we instantiate
+    toInstantiate->progress_condition = progressCondition;
+    toInstantiate->cVar = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
+    toInstantiate->priority = priority;
+    toInstantiate->data = data;
 
-    pthread_cond_init(temp->c, NULL);
-
-    pthread_cond_wait(temp->c, serial->m);
-
-    // Serial_Enter(serial);
+    pthread_cond_init(toInstantiate->cVar, NULL);
+    pthread_cond_wait(toInstantiate->cVar, serial->lock);
 }
 
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func)
+// Enqueues a thread into the given queue (unless it should just proceed), along with the condition of its exit
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *progressCondition)
 {
-    Serial_Enqueue_Data(serial, targetQueue, func, 0, NULL);
+    Serial_Enqueue_Data(serial, targetQueue, progressCondition, 0, NULL);
 }
 
-void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
+// Adds a queue to the given crowd, exiting the serializer during its time in the crowd and re-entering when the crowd action completes
+void Serial_Join_Crowd(serial_t* serial, crowd_t* targetCrowd, action_t* action)
 {
-    Serial_Join_Crowd_Data(serial, crowd, func, NULL);
+    Serial_Join_Crowd_Data(serial, targetCrowd, action, NULL);
 }
 
-void Serial_Join_Crowd_Data(serial_t* serial, crowd_t* crowd, cond_t* func, void *data)
+// Adds a queue to the given crowd, along with any execution data, exiting the serializer during its time in the crowd and re-entering when the crowd action completes
+void Serial_Join_Crowd_Data(serial_t* serial, crowd_t* targetCrowd, action_t* action, void *data)
 {
-    // already have serializer
-    // join the crowd
-    // give up serializer (serial exit)
-    // call the function
-    // serial_enter
-    crowd->count += 1;
+    targetCrowd->count += 1;
     Serial_Exit(serial);
-    call_func(data, func);
+    call_func(data, action);
     Serial_Enter(serial);
-    crowd->count -= 1;
+    targetCrowd->count -= 1;
 }
