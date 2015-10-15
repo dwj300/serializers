@@ -4,16 +4,20 @@
 #define true 1
 #define false 0
 
+#define INT2VOIDP(i) (void*)(uintptr_t)(i)
+
 typedef int (cond_t)();
+
+//typedef int *(*(cond_t)()) ;
 
 typedef int bool;
 
 typedef struct queue_node
 {
-    pthread_mutex_t *m;
     pthread_cond_t *c;
     cond_t *func;
     int priority;
+    void *data;
     struct queue_node *next;
 } queue_node_t;
 
@@ -36,9 +40,17 @@ typedef struct queueListNode
 typedef struct serial
 {
     queue_list_node_t *queueBeingServed;
+    queue_node_t *onDeck;
     pthread_mutex_t *m;
 } serial_t;
 
+typedef struct data
+{
+    int seq;
+    int tid;
+    int seeked_cylinders;
+    cond_t *func;
+} data_t;
 
 serial_t* Create_Serial();
 void Serial_Enter(serial_t*);
@@ -47,9 +59,8 @@ queue_t* Create_Queue(serial_t*);
 crowd_t* Create_Crowd(serial_t*);
 int Queue_Empty(serial_t* serial, queue_t* queue);
 int Crowd_Empty(serial_t* serial, crowd_t* crowd);
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func, int priority);
-void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func);
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func, int priority, void *data);
+void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, void *data);
 void print(char *string);
 bool All_Queues_Empty(serial_t* serial);
-
 

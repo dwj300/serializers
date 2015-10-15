@@ -16,16 +16,21 @@
 #define ThinkTime 1.0
 #define NUM_PHILOSOPHERS 5
 
-void *model_eat(int id)
+void *model_eat(data_t *data)
 {
+	int id = data->tid;
 	printf("Philosopher #%d is eating.\n", id);
 	double eat_time = ( rand() % (NUM_PHILOSOPHERS * 2) ) * EatTime - (NUM_PHILOSOPHERS - 1) * ThinkTime;
 	sleep( (eat_time > 0) ? eat_time : EatTime);
+	//fprintf(stderr,"done sleeping\n");
+	printf("Philosopher #%d 's done.\n", id);
+
 	return NULL;
 }
 
-void *model_think(int id)
+void *model_think(data_t *data)
 {
+	int id = data->tid;
 	printf("Philosopher #%d is thinking.\n", id);
 	double think_time = ( rand() % (NUM_PHILOSOPHERS * 2) ) * ThinkTime - (NUM_PHILOSOPHERS - 1) * EatTime;
 	sleep( (think_time > 0) ? think_time : ThinkTime);

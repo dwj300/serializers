@@ -1,0 +1,266 @@
+Request #23 submitted @ 0.000000.
+Scheduling request for cylinder 23 in the up queue
+before enqueue: pri:77
+Current Queue: 
+Other Queue: 
+id: 1
+Request #1 is serving.
+Request #1 has been serviced.
+Request #74 submitted @ 1.500000.
+Scheduling request for cylinder 74 in the up queue
+before enqueue: pri:26
+Current Queue: 
+Other Queue: 
+id: 2
+Request #2 is serving.
+Request #10 submitted @ 2.500000.
+Scheduling request for cylinder 10 in the down queue
+before enqueue: pri:10
+Current Queue: 
+Other Queue: 
+after enqueue:
+Current Queue: 
+Other Queue: p:10, 
+switching direction
+Request #2 has been serviced.
+id: 3
+Request #3 is serving.
+Request #9 submitted @ 3.500000.
+Scheduling request for cylinder 9 in the down queue
+before enqueue: pri:9
+Current Queue: 
+Other Queue: 
+after enqueue:
+Current Queue: p:9, 
+Other Queue: 
+Request #88 submitted @ 5.400000.
+Scheduling request for cylinder 88 in the up queue
+before enqueue: pri:12
+Current Queue: p:9, 
+Other Queue: 
+after enqueue:
+Current Queue: p:9, 
+Other Queue: p:12, 
+Request #23 submitted @ 7.300000.
+Request #11 submitted @ 8.200000.
+Request #99 submitted @ 9.000000.
+Scheduling request for cylinder 23 in the down queue
+before enqueue: pri:23
+Current Queue: p:9, 
+Other Queue: p:12, 
+after enqueue:
+Current Queue: p:23, p:9, 
+Other Queue: p:12, 
+Scheduling request for cylinder 99 in the up queue
+before enqueue: pri:1
+Current Queue: p:23, p:9, 
+Other Queue: p:12, 
+after enqueue:
+Current Queue: p:23, p:9, 
+Other Queue: p:12, p:1, 
+Scheduling request for cylinder 11 in the down queue
+before enqueue: pri:11
+Current Queue: p:23, p:9, 
+Other Queue: p:12, p:1, 
+after enqueue:
+Current Queue: p:23, p:11, p:9, 
+Other Queue: p:12, p:1, 
+Request #3 has been serviced.
+id: 6
+Request #6 is serving.
+Request #6 has been serviced.
+id: 7
+Request #7 is serving.
+switching direction
+id: 4
+Request #4 is serving.
+Request #4 has been serviced.
+id: 5
+Request #5 is serving.
+Request #7 has been serviced.
+Request #0 submitted @ 10.400000.
+Scheduling request for cylinder 0 in the down queue
+before enqueue: pri:0
+Current Queue: p:1, 
+Other Queue: 
+after enqueue:
+Current Queue: p:1, 
+Other Queue: p:0, 
+Request #10 submitted @ 11.000000.
+Scheduling request for cylinder 10 in the up queue
+before enqueue: pri:90
+Current Queue: p:1, 
+Other Queue: p:0, 
+after enqueue:
+Current Queue: p:90, p:1, 
+Other Queue: p:0, 
+Request #13 submitted @ 12.400000.
+Scheduling request for cylinder 13 in the up queue
+before enqueue: pri:87
+Current Queue: p:90, p:1, 
+Other Queue: p:0, 
+after enqueue:
+Current Queue: p:90, p:87, p:1, 
+Other Queue: p:0, 
+Request #5 has been serviced.
+id: 10
+Request #10 is serving.
+Request #33 submitted @ 14.600000.
+Scheduling request for cylinder 33 in the down queue
+before enqueue: pri:33
+Current Queue: p:87, p:1, 
+Other Queue: p:0, 
+after enqueue:
+Current Queue: p:87, p:1, 
+Other Queue: p:33, p:0, 
+Request #61 submitted @ 16.299999.
+Request #75 submitted @ 17.200001.
+Scheduling request for cylinder 61 in the down queue
+before enqueue: pri:61
+Current Queue: p:87, p:1, 
+Other Queue: p:33, p:0, 
+after enqueue:
+Current Queue: p:87, p:1, 
+Other Queue: p:61, p:33, p:0, 
+Scheduling request for cylinder 75 in the down queue
+before enqueue: pri:75
+Current Queue: p:87, p:1, 
+Other Queue: p:61, p:33, p:0, 
+after enqueue:
+Current Queue: p:87, p:1, 
+Other Queue: p:75, p:61, p:33, p:0, 
+Request #23 submitted @ 19.100000.
+Scheduling request for cylinder 23 in the down queue
+before enqueue: pri:23
+Current Queue: p:87, p:1, 
+Other Queue: p:75, p:61, p:33, p:0, 
+after enqueue:
+Current Queue: p:87, p:1, 
+Other Queue: p:75, p:61, p:33, p:23, p:0, 
+Request #10 has been serviced.
+id: 11
+Request #11 is serving.
+Request #11 has been serviced.
+switching direction
+id: 8
+Request #8 is serving.
+Request #43 submitted @ 20.200001.
+Scheduling request for cylinder 43 in the up queue
+before enqueue: pri:57
+Current Queue: p:75, p:61, p:33, p:23, p:0, 
+Other Queue: 
+after enqueue:
+Current Queue: p:75, p:61, p:33, p:23, p:0, 
+Other Queue: p:57, 
+Request #95 submitted @ 22.000000.
+Scheduling request for cylinder 95 in the up queue
+before enqueue: pri:5
+Current Queue: p:75, p:61, p:33, p:23, p:0, 
+Other Queue: p:57, 
+after enqueue:
+Current Queue: p:75, p:61, p:33, p:23, p:0, 
+Other Queue: p:57, p:5, 
+Request #76 submitted @ 24.000000.
+Scheduling request for cylinder 76 in the up queue
+before enqueue: pri:24
+Current Queue: p:75, p:61, p:33, p:23, p:0, 
+Other Queue: p:57, p:5, 
+after enqueue:
+Current Queue: p:75, p:61, p:33, p:23, p:0, 
+Other Queue: p:57, p:24, p:5, 
+Request #8 has been serviced.
+id: 14
+Request #14 is serving.
+Request #14 has been serviced.
+id: 13
+Request #13 is serving.
+Request #13 has been serviced.
+id: 12
+Request #12 is serving.
+Request #43 submitted @ 26.500000.
+Scheduling request for cylinder 43 in the down queue
+before enqueue: pri:43
+Current Queue: p:23, p:0, 
+Other Queue: p:57, p:24, p:5, 
+after enqueue:
+Current Queue: p:43, p:23, p:0, 
+Other Queue: p:57, p:24, p:5, 
+Request #12 has been serviced.
+id: 19
+Request #19 is serving.
+id: 15
+Request #15 is serving.
+Request #19 has been serviced.
+Request #15 has been serviced.
+switching direction
+id: 9
+Request #9 is serving.
+Request #94 submitted @ 28.799999.
+Scheduling request for cylinder 94 in the up queue
+before enqueue: pri:6
+Current Queue: p:57, p:24, p:5, 
+Other Queue: 
+after enqueue:
+Current Queue: p:57, Request #20 submitted @ 29.100000.
+p:24, p:6, p:5, 
+Other Queue: 
+Request #22 submitted @ 30.000000.
+Disk requests were created successfully!
+Scheduling request for cylinder 20 in the down queue
+before enqueue: pri:20
+Current Queue: p:57, p:24, p:6, p:5, 
+Other Queue: 
+after enqueue:
+Current Queue: p:57, p:24, p:6, p:5, 
+Other Queue: p:20, 
+Scheduling request for cylinder 22 in the down queue
+before enqueue: pri:22
+Current Queue: p:57, p:24, p:6, p:5, 
+Other Queue: p:20, 
+after enqueue:
+Current Queue: p:57, p:24, p:6, p:5, 
+Other Queue: p:22, p:20, 
+Request #9 has been serviced.
+id: 16
+Request #16 is serving.
+Request #16 has been serviced.
+id: 18
+Request #18 is serving.
+Request #18 has been serviced.
+id: 20
+Request #20 is serving.
+switching direction
+id: 17
+Request #17 is serving.
+Request #17 has been serviced.
+Request #20 has been serviced.
+id: 22
+Request #22 is serving.
+Request #22 has been serviced.
+id: 21
+Request #21 is serving.
+Request #21 has been serviced.
+RequestID = 1, ArrivalTime = 0.000000, CylinderNo = 23, ServicedSeqNo = 0, SeekedCylinders = -1.
+RequestID = 2, ArrivalTime = 1.500000, CylinderNo = 74, ServicedSeqNo = 1, SeekedCylinders = -1.
+RequestID = 3, ArrivalTime = 2.500000, CylinderNo = 10, ServicedSeqNo = 2, SeekedCylinders = -1.
+RequestID = 4, ArrivalTime = 3.500000, CylinderNo = 9, ServicedSeqNo = 3, SeekedCylinders = -1.
+RequestID = 5, ArrivalTime = 5.400000, CylinderNo = 88, ServicedSeqNo = 4, SeekedCylinders = -1.
+RequestID = 6, ArrivalTime = 7.300000, CylinderNo = 23, ServicedSeqNo = 5, SeekedCylinders = -1.
+RequestID = 7, ArrivalTime = 8.200000, CylinderNo = 11, ServicedSeqNo = 7, SeekedCylinders = -1.
+RequestID = 8, ArrivalTime = 9.000000, CylinderNo = 99, ServicedSeqNo = 6, SeekedCylinders = -1.
+RequestID = 9, ArrivalTime = 10.400000, CylinderNo = 0, ServicedSeqNo = 8, SeekedCylinders = -1.
+RequestID = 10, ArrivalTime = 11.000000, CylinderNo = 10, ServicedSeqNo = 9, SeekedCylinders = -1.
+RequestID = 11, ArrivalTime = 12.400000, CylinderNo = 13, ServicedSeqNo = 10, SeekedCylinders = -1.
+RequestID = 12, ArrivalTime = 14.600000, CylinderNo = 33, ServicedSeqNo = 11, SeekedCylinders = -1.
+RequestID = 13, ArrivalTime = 16.299999, CylinderNo = 61, ServicedSeqNo = 12, SeekedCylinders = -1.
+RequestID = 14, ArrivalTime = 17.200001, CylinderNo = 75, ServicedSeqNo = 13, SeekedCylinders = -1.
+RequestID = 15, ArrivalTime = 19.100000, CylinderNo = 23, ServicedSeqNo = 14, SeekedCylinders = -1.
+RequestID = 16, ArrivalTime = 20.200001, CylinderNo = 43, ServicedSeqNo = 15, SeekedCylinders = -1.
+RequestID = 17, ArrivalTime = 22.000000, CylinderNo = 95, ServicedSeqNo = 16, SeekedCylinders = -1.
+RequestID = 18, ArrivalTime = 24.000000, CylinderNo = 76, ServicedSeqNo = 17, SeekedCylinders = -1.
+RequestID = 19, ArrivalTime = 26.500000, CylinderNo = 43, ServicedSeqNo = 18, SeekedCylinders = -1.
+RequestID = 20, ArrivalTime = 28.799999, CylinderNo = 94, ServicedSeqNo = 19, SeekedCylinders = -1.
+RequestID = 21, ArrivalTime = 29.100000, CylinderNo = 20, ServicedSeqNo = 20, SeekedCylinders = -1.
+RequestID = 22, ArrivalTime = 30.000000, CylinderNo = 22, ServicedSeqNo = 21, SeekedCylinders = -1.
+The results printed successfully!
+
