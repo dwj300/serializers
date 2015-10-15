@@ -19,6 +19,30 @@ void print_queue(serial_t *serial)
     print("\n");
 }
 
+void PrintQueue(queue_t * toPrint)
+{
+    if(toPrint == NULL)
+    {
+//        print("Well shit");
+        return;
+    }
+    if(toPrint->head == NULL)
+    {
+//        print("Well shit2");
+        return;
+    }
+    queue_node_t * selector = toPrint->head;
+    while(selector!=NULL)
+    {
+        //char temp[100];
+        //sprintf(temp, " %4d ", selector->priority);
+        //print (temp);
+        fprintf(stderr, "p:%d, ", selector->priority);
+        selector = selector->next;
+    }
+
+}
+
 serial_t* Create_Serial()
 {
     serial_t *serializer = malloc(sizeof(serial_t));
@@ -309,27 +333,5 @@ void print(char *string)
 }
 
 
-void PrintQueue(queue_t * toPrint)
-{
-    if(toPrint == NULL)
-    {
-//        print("Well shit");
-        return;
-    }
-    if(toPrint->head == NULL)
-    {
-//        print("Well shit2");
-        return;
-    }
-    queue_node_t * selector = toPrint->head;
-    while(selector!=NULL)
-    {
-        //char temp[100];
-        //sprintf(temp, " %4d ", selector->priority);
-        //print (temp);
-        fprintf(stderr, "p:%d, ", selector->priority);
-        selector = selector->next;
-    }
 
-}
 

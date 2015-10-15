@@ -61,7 +61,7 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
     Serial_Enter(serializer);
 
     scheduler_data_t* newNodeData = (scheduler_data_t*)malloc(sizeof(scheduler_data_t));
-    serviceNum = newNodeData->seq = disk_access_sequence_number++;
+    //serviceNum = newNodeData->seq = disk_access_sequence_number++;
 
     // PrintQueue(up_queue);
     // PrintQueue(down_queue);
@@ -107,7 +107,7 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
         exit(-1);
     }
 
-
+    serviceNum = disk_access_sequence_number++;
     /*if( (scheduledInUp && GoingDown()) || (!scheduledInUp && GoingDown()) )
     {
         Switch();
@@ -118,7 +118,7 @@ int Disk_Request(int cylinderno, void* model_request, int * seekedcylinders, int
     data_t* newData = (data_t*)malloc(sizeof(data_t));
     newData->seq = serviceNum;
     newData->tid = id;
-    *seekedcylinders = newData->seeked_cylinders = abs(head_position-cylinderno);
+    seekedcylinders[id] = newData->seeked_cylinders = abs(head_position-cylinderno);
     newData->func = model_request;
 
     head_position = cylinderno;
