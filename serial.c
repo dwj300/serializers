@@ -2,45 +2,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-void print_queue(serial_t *serial)
+cond_t* call_func(void* data, cond_t* func)
 {
-    if (serial->queueBeingServed->queue == NULL)
-        return;
-    print("Queue: ");
-    queue_node_t *cur = serial->queueBeingServed->queue->head;
-    while(cur != NULL)
-    {
-        char str[50];
-        //sprintf(str, "%d ", ((data_t *)(cur->data))->tid);
-        print(str);
-        cur = cur->next;
-    }
-
-    print("\n");
-}
-
-void PrintQueue(queue_t * toPrint)
-{
-    if(toPrint == NULL)
-    {
-//        print("Well shit");
-        return;
-    }
-    if(toPrint->head == NULL)
-    {
-//        print("Well shit2");
-        return;
-    }
-    queue_node_t * selector = toPrint->head;
-    while(selector!=NULL)
-    {
-        //char temp[100];
-        //sprintf(temp, " %4d ", selector->priority);
-        //print (temp);
-        fprintf(stderr, "p:%d, ", selector->priority);
-        selector = selector->next;
-    }
-
+    return (((data != NULL) && (func(data) == true)) || ((data == NULL) && (func() == true)));
 }
 
 serial_t* Create_Serial()
@@ -54,11 +18,7 @@ serial_t* Create_Serial()
 
 void Serial_Enter(serial_t* serial)
 {
-    print("locking mutex");
     pthread_mutex_lock(serial->m);
-    print("got lock!");
-
-    // have lock
 }
 
 bool All_Queues_Empty(serial_t* serial)
@@ -87,63 +47,50 @@ bool All_Queues_Empty(serial_t* serial)
 
 void signal_new_thread(serial_t *serial)
 {
-    print_queue(serial);
-    print("starting search\n");
     // Search through the queues of the serializer until we find the next
     // thread waiting and ready to enter
-    queue_list_node_t *start = serial->queueBeingServed;
-    //If there's no one to signal, just leave the serializer
-    if(!All_Queues_Empty(serial))
+    // If there's no one to signal, just leave the serializer
+    if(All_Queues_Empty(serial))
     {
-	// Don't need to deal with single queue case, because all queues empty takes care of that
-	if(Queue_Empty(serial, serial->queueBeingServed->queue))
-	{
-            serial->queueBeingServed = serial->queueBeingServed->next;
-            printf("switching direction\n");
-	}
-
-            queue_node_t *node = serial->queueBeingServed->queue->head;
-            queue_node_t *prev = NULL;
-            while(node != NULL)
-            {
-                serial->onDeck = node;
-                if (node->func(node->data))
-                {
-                    print("found a valid thing");
-
-                    fprintf(stderr, "signaling %d\n", node->priority);
-                    //char str[50];
-                    //sprintf(str, "signaling tid: %d\n", ((data_t *)node->data)->tid);
-                    //print(str);
-                    pthread_cond_signal(node->c);
-                    //int res = pthread_cond_signal(node->c);
-                    //char str1[50];
-                    //sprintf(str1, "res+signal2: %d", res);
-                    //print(str1);
-                    if (prev == NULL)
-                    {
-                        serial->queueBeingServed->queue->head = node->next;
-                    }
-                    else
-                    {
-                        prev->next = node->next;
-                    }
-                    break;
-                }
-                else
-                {
-                    prev = node;
-                    node = node->next;
-                }
-            }
+        return;
     }
-    print("finished search\n");
+
+    // Don't need to deal with single queue case, because all queues empty takes care of that
+    // Switch directions
+    if(Queue_Empty(serial, serial->queueBeingServed->queue))
+    {
+        serial->queueBeingServed = serial->queueBeingServed->next;
+    }
+
+    queue_node_t *node = serial->queueBeingServed->queue->head;
+    queue_node_t *prev = NULL;
+    while(node != NULL)
+    {
+        serial->onDeck = node;
+        if (    call_func(node->data, node->func))
+        {
+            pthread_cond_signal(node->c);
+            if (prev == NULL)
+            {
+                serial->queueBeingServed->queue->head = node->next;
+            }
+            else
+            {
+                prev->next = node->next;
+            }
+            break;
+        }
+        else
+        {
+            prev = node;
+            node = node->next;
+        }
+    }
 }
 
 void Serial_Exit(serial_t* serial)
 {
     signal_new_thread(serial);
-    print("unlocking mutex");
     pthread_mutex_unlock(serial->m);
 }
 
@@ -198,29 +145,19 @@ int Crowd_Empty(serial_t* serial, crowd_t* crowd)
     return false;
 }
 
-void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, void *data)
+void Serial_Enqueue_Data(serial_t* serial, queue_t* targetQueue, cond_t* func, int priority, void *data)
 {
     signal_new_thread(serial);
 
-    fprintf(stderr, "before enqueue: pri:%d\n", priority);
-    fprintf(stderr, "Current Queue: ");
-    PrintQueue(serial->queueBeingServed->queue);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Other Queue: ");
-    PrintQueue(serial->queueBeingServed->next->queue);
-    fprintf(stderr, "\n");
-
-    //fprintf(stderr, "%d\n", serial->m->__data__.__owner);
-    // Add to back of queue
+    // Add to correct spot if queue
     // Find first node where condition is true
-    // signal that node
     // give up serializer lock
     queue_node_t *temp = targetQueue->head;
 
     //If the queue is empty
     if (temp == NULL)
     {
-        if (func(data) == true)
+        if (call_func(data, func))
         {
             return; //If the node would be the first in the queue, and it's ready, don't join, just continue in the serializer
         }
@@ -239,36 +176,36 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
         }
         else
         {
-		while(temp->next != NULL && priority <= temp->next->priority)
-		{
-		    if(temp->func(temp->data) == 1)
-		    {
-			all_false = false;
-		    }
+        while(temp->next != NULL && priority <= temp->next->priority)
+        {
+            if(call_func(temp->data, temp->func)) //((temp->data && temp->func(temp->data) == 1) || (temp->func() == 1))
+            {
+            all_false = false;
+            }
 
-		    temp = temp->next;
-		}
-		if(temp->next != NULL) //If we're inserting into the middle of the queue
-		{
-		    if (all_false && (func(data) == 1))
-		    {
-			return;
-		    }
-		    queue_node_t *afterNew = temp->next;
-		    temp->next = malloc(sizeof(queue_node_t));
-		    temp->next->next = afterNew;
-		}
-		// End of queue
-		else
-		{
-		    if (all_false && (func(data) == 1))
-		    {
-			return;
-		    }
-		    temp->next = malloc(sizeof(queue_node_t));
-		    temp->next->next = NULL;
-		}
-		temp = temp->next;
+            temp = temp->next;
+        }
+        if(temp->next != NULL) //If we're inserting into the middle of the queue
+        {
+            if (all_false && call_func(data, func)) //((data && func(data)  == 1) || func() == 1))
+            {
+            return;
+            }
+            queue_node_t *afterNew = temp->next;
+            temp->next = malloc(sizeof(queue_node_t));
+            temp->next->next = afterNew;
+        }
+        // End of queue
+        else
+        {
+            if (all_false && call_func(data, func)) //((data && func(data)  == 1) || func() == 1))
+            {
+            return;
+            }
+            temp->next = malloc(sizeof(queue_node_t));
+            temp->next->next = NULL;
+        }
+        temp = temp->next;
         }
     }
     //In all cases, temp points to the new node
@@ -276,35 +213,25 @@ void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t* func, int pr
     temp->c = (pthread_cond_t *)malloc(sizeof(pthread_cond_t));
     temp->priority = priority;
     temp->data = data;
-    //temp->m = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));
-
-    fprintf(stderr, "after enqueue:\n");
-    fprintf(stderr, "Current Queue: ");
-    PrintQueue(serial->queueBeingServed->queue);
-    fprintf(stderr, "\n");
-    fprintf(stderr, "Other Queue: ");
-    PrintQueue(serial->queueBeingServed->next->queue);
-    fprintf(stderr, "\n");
-
-
 
     pthread_cond_init(temp->c, NULL);
 
-    print("waiting on condition var");
-
-    //pthread_mutex_lock(temp->m);
-
-    char str[50];
-    //sprintf(str, "starting cond wait: %d\n", ((data_t *)data)->tid);
-    print(str);
-
     pthread_cond_wait(temp->c, serial->m);
 
-    fprintf(stderr, "coming back to life: %d\n", priority);
     // Serial_Enter(serial);
 }
 
-void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, void *data)
+void Serial_Enqueue(serial_t* serial, queue_t* targetQueue, cond_t *func)
+{
+    Serial_Enqueue_Data(serial, targetQueue, func, 0, NULL);
+}
+
+void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func)
+{
+    Serial_Join_Crowd_Data(serial, crowd, func, NULL);
+}
+
+void Serial_Join_Crowd_Data(serial_t* serial, crowd_t* crowd, cond_t* func, void *data)
 {
     // already have serializer
     // join the crowd
@@ -313,25 +240,7 @@ void Serial_Join_Crowd(serial_t* serial, crowd_t* crowd, cond_t* func, void *dat
     // serial_enter
     crowd->count += 1;
     Serial_Exit(serial);
-    if (data != NULL)
-    {
-        func(data);
-    }
-    else
-    {
-        func();
-    }
-    print("leaving crowd");
+    call_func(data, func);
     Serial_Enter(serial);
     crowd->count -= 1;
-
 }
-
-void print(char *string)
-{
-    // fprintf(stderr, "[%li] %s\n", (unsigned long int)pthread_self(), string);
-}
-
-
-
-

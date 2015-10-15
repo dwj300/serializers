@@ -1,6 +1,4 @@
 #include "dp_serial.h"
-#include <stdio.h>
-
 
 int left(int i)
 {
@@ -12,48 +10,46 @@ int right(int i)
 	return (i+1) % num_phil;
 }
 
-int true_func()
+cond_t* eat_queue_cond(void* data)
 {
-	return 1;
+	int tid = ((data_t*)data)->tid;
+	return forks[left(tid)] && forks[right(tid)];
 }
 
-int eat_queue_cond(data_t *data)
+void wrapper(data_t* data)
 {
-	int tid = data->tid;
-	// printf("tid: %d\n", tid);
-	//fprintf(stderr, "thread %d in eat queue cond: %d\n", tid, (forks[left(tid)] && forks[right(tid)]));
-	return forks[left(tid)] && forks[right(tid)];
+	data->func(data->tid);
 }
 
 void Eat(int phil_id, void *(*model_eat()))
 {
 	Serial_Enter(serializer);
-	data_t *data = malloc(sizeof(data_t));
+	data_t* data = (data_t*)malloc(sizeof(data_t));
 	data->tid = phil_id;
+	data->func = model_eat;
+
 	// Enter queue
-	Serial_Enqueue(serializer, waiting_q, &eat_queue_cond, 0, data);
-	//printf("%d gots a serializer\n", phil_id);
+	Serial_Enqueue_Data(serializer, waiting_q, eat_queue_cond, 0, data);
 	// Got the serializer, means we can eat.
 	forks[left(phil_id)] = 0;
 	forks[right(phil_id)] = 0;
 
-	Serial_Join_Crowd(serializer, eating_crowd, model_eat, data);
+	Serial_Join_Crowd_Data(serializer, eating_crowd, wrapper, data);
 
-	//Serial_Enqueue(serializer, waiting_q, &eat_queue_cond, phil_id);
 	forks[left(phil_id)] = 1;
 	forks[right(phil_id)] = 1;
+
 	Serial_Exit(serializer);
 }
 
 void Think(int phil_id, void *(*model_think()))
 {
-	//Serial_Exit(serializer);
-
 	data_t *data = malloc(sizeof(data_t));
 	data->tid = phil_id;
+	data->func = model_think;
 
 	Serial_Enter(serializer);
-	Serial_Join_Crowd(serializer, thinking_crowd, model_think, data);
+	Serial_Join_Crowd_Data(serializer, thinking_crowd, wrapper, data);
 	Serial_Exit(serializer);
 }
 
